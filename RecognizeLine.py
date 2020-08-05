@@ -7,7 +7,6 @@ from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 from spellchecker import SpellChecker
 import math
-import matplotlib.pyplot as plt
 from RecognizeWord import recognize_word
 os.environ['CUDA_VISIBLE_DEVICES']='-1'
 
@@ -106,7 +105,7 @@ def sort_word(wordlist):
     return wordlist
 
 
-def recognize_line(line_img):
+def recognize_line(line_img,idx):
     img=pad_img(line_img)
     ori_img=img.copy()
     #ori_img=np.stack((ori_img,)*3, axis=-1)
@@ -118,10 +117,9 @@ def recognize_line(line_img):
     img=np.expand_dims(img,axis=0)
     seg_pred=model.predict(img)
     seg_pred=np.squeeze(np.squeeze(seg_pred,axis=0),axis=-1)
-    plt.imsave('test_img_mask_page.jpg',seg_pred)
-    mask=cv2.imread('test_img_mask_page.JPG',0)
-    cv2.threshold(mask,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU,mask)
-    contours, hier = cv2.findContours(mask, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+    seg_pred=cv2.normalize(src=seg_pred, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+    cv2.threshold(seg_pred,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU,seg_pred)
+    contours, hier = cv2.findContours(seg_pred, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
     
     (H, W) = ori_img.shape[:2]
     (newW, newH) = (512, 512)
@@ -134,7 +132,7 @@ def recognize_line(line_img):
         # get the bounding rect
         x, y, w, h = cv2.boundingRect(c)
         # draw a white rectangle to visualize the bounding rect
-       # cv2.rectangle(ori_img, (int(x*rW), int(y*rH)), (int((x+w)*rW),int((y+h)*rH)), (255,0,0), 1)
+        # cv2.rectangle(ori_img, (int(x*rW), int(y*rH)), (int((x+w)*rW),int((y+h)*rH)), (255,0,0), 1)
         coordinates.append((int(x*rW),int(y*rH),int((x+w)*rW),int((y+h)*rH)))
 
     coordinates=sort_word(coordinates)
@@ -158,7 +156,7 @@ def recognize_line(line_img):
 
     
 
-    #cv2.imwrite("output.png",ori_img)
+    # cv2.imwrite(f"{idx}.jpg",ori_img)
 
 
 

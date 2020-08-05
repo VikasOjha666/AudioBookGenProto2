@@ -83,10 +83,10 @@ def generate_audios(filename):
     pred=model.predict(img)
     pred=np.squeeze(np.squeeze(pred,axis=0),axis=-1)
 
-    plt.imsave('test_img_mask.JPG',pred)
+    
 
     coordinates=[]
-    img = cv2.imread('test_img_mask.JPG',0) 
+    img = cv2.normalize(src=pred, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
     cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU,img)
     ori_img=cv2.imread(f'{filename}',0)
  
@@ -113,9 +113,10 @@ def generate_audios(filename):
 
     
     
-    for im in line_img_array:
-        sentence=recognize_line(im)
-        file.writelines(sentence+'\n')
-    file.close()
+    for idx,im in enumerate(line_img_array):
+        sentence=recognize_line(im,idx)
+    #     file.writelines(sentence+'\n')
+        print(sentence)
+    # file.close()
 
 

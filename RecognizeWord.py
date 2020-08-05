@@ -110,26 +110,6 @@ act_model.load_weights('CRNN_model.hdf5')
 
 
 
-
-# files_to_predict=os.listdir('./pred_images/')
-
-
-# sentence=''
-
-# words=[]
-
-# for fn in files_to_predict:
-#     img=cv2.imread('./pred_images/'+fn,0)
-#     img=preprocess_img(img)
-#     word=predict_word(img)
-#     words.append(word)
-
-# for word in words:
-#   sentence+=word + ' '
-
-# print(sentence)
-
-
 def recognize_word(word_img):
     word_img=preprocess_img(word_img)
     word=predict_word(word_img)
