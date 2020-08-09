@@ -163,5 +163,3 @@ def recognize_line(line_img,idx):
 
 
 
-
-

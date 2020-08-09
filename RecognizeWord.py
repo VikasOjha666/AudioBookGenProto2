@@ -12,6 +12,7 @@ import keras.backend as K
 
 from spellchecker import SpellChecker
 import tensorflow as tf
+from PIL import Image
 
 spell = SpellChecker()
 
@@ -20,40 +21,47 @@ spell = SpellChecker()
 
 
 
-char_list = string.ascii_letters+string.digits
+char_list = string.ascii_letters+string.digits+',.?:;'
 
 
-def preprocess_img(img):
-    h,w=img.shape
-    new_width=0
-    new_height=0
-    if w>128:
-        img=cv2.resize(img,(128,h))
-        new_width=128
-    else:
-        new_width=w
-    if h>32:
-        img=cv2.resize(img,(new_width,32))
-        new_height=32
-    else:
-        new_height=h
-    if w<128:
-        add_ones=np.ones((new_height,128-new_width))*255
-        #print(f" First block Image shape={img.shape} Pad shape={add_ones.shape}")
-        img=np.concatenate((img,add_ones),axis=1)
-        new_width=128
-    if h<32:
-        add_ones=np.ones((32-new_height,new_width))*255
-        #print(f"Second block Image shape={img.shape} Pad shape={add_ones.shape}")
-        img=np.concatenate((img,add_ones))
-        new_height=32
-    
-    
-    # Normalize each image
-    img = img/255
-    img = np.expand_dims(img , axis = 2)
-    img=np.expand_dims(img,axis=0)
+def find_dominant_color(image):
+        #Resizing parameters
+        width, height = 150,150
+        image = image.resize((width, height),resample = 0)
+        #Get colors from image object
+        pixels = image.getcolors(width * height)
+        #Sort them by count number(first element of tuple)
+        sorted_pixels = sorted(pixels, key=lambda t: t[0])
+        #Get the most frequent color
+        dominant_color = sorted_pixels[-1][1]
+        return dominant_color
+
+def preprocess_img(img, imgSize):
+    "put img into target img of size imgSize, transpose for TF and normalize gray-values"
+
+    # there are damaged files in IAM dataset - just use black image instead
+    if img is None:
+        img = np.zeros([imgSize[1], imgSize[0]]) 
+        print("Image None!")
+
+    # create target image and copy sample image into it
+    (wt, ht) = imgSize
+    (h, w) = img.shape
+    fx = w / wt
+    fy = h / ht
+    f = max(fx, fy)
+    newSize = (max(min(wt, int(w / f)), 1),
+               max(min(ht, int(h / f)), 1))  # scale according to f (result at least 1 and at most wt or ht)
+    img = cv2.resize(img, newSize, interpolation=cv2.INTER_CUBIC) # INTER_CUBIC interpolation best approximate the pixels image
+                                                               # see this https://stackoverflow.com/a/57503843/7338066
+    most_freq_pixel=find_dominant_color(Image.fromarray(img))
+    target = np.ones([ht, wt]) * most_freq_pixel  
+    target[0:newSize[1], 0:newSize[0]] = img
+
+    img = target
+
     return img
+
 
 
 def predict_word(img):
@@ -111,7 +119,8 @@ act_model.load_weights('CRNN_model.hdf5')
 
 
 def recognize_word(word_img):
-    word_img=preprocess_img(word_img)
+    word_img=preprocess_img(word_img,(128,32))
+    word_img=np.expand_dims(np.expand_dims(word_img,axis=0),axis=-1)
     word=predict_word(word_img)
     return word
 
