@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import os
-os.environ['CUDA_VISIBLE_DEVICES']='-1'
+#os.environ['CUDA_VISIBLE_DEVICES']='-1'
 import librosa
 import pyttsx3
 import pytesseract
@@ -10,6 +10,7 @@ from keras.models import Model
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 from RecognizeLine import recognize_line
+from RecognizeWord import recognize_words
 
 
 def unet(pretrained_weights = None,input_size = (512,512,1)):
@@ -72,7 +73,7 @@ line_img_array=[]
 
 
 def generate_audios(filename):
-    file=open('recognized_texts.txt','w')
+    
     img=cv2.imread(f'{filename}',0)
     ret,img=cv2.threshold(img,150,255,cv2.THRESH_BINARY_INV)
     img=cv2.resize(img,(512,512))
@@ -111,10 +112,25 @@ def generate_audios(filename):
 
         line_img_array.append(p_img)
 
-    
+    full_index_indicator=[]
+    all_words_list=[]
+    len_line_arr=0
     
     for idx,im in enumerate(line_img_array):
-        sentence=recognize_line(im,idx)
-        #file.writelines(sentence+'\n')
-        print(sentence)
-    #file.close()
+        line_indicator,word_array=recognize_line(im,idx)
+        for k in range(len(word_array)):
+            full_index_indicator.append(line_indicator[k])
+            all_words_list.append(word_array[k])
+        len_line_arr+=1
+        # file.writelines(sentence+'\n')
+
+    all_words_list=np.array(all_words_list)
+
+
+
+    
+    recognize_words(full_index_indicator,all_words_list,len_line_arr)
+
+    
+
+  
